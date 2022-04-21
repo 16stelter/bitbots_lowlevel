@@ -97,74 +97,90 @@ bool WolfgangHardwareInterface::create_interfaces(std::vector<std::pair<std::str
           uint16_t model_number_specified_16 = uint16_t(model_number_specified);
           uint16_t *model_number_returned_16 = new uint16_t;
           if (driver->ping(uint8_t(id), model_number_returned_16)) {
-            // check if the specified model number matches the actual model number of the device
-            if (model_number_specified_16!=*model_number_returned_16) {
-              RCLCPP_WARN(nh_->get_logger(), "Model number of id %d does not match", id);
-            }
-            // ping was successful, add device correspondingly
-            // only add them if the mode is set correspondingly
-            // TODO maybe move more of the parameter stuff in the init of the modules instead of doing everything here
-            if (model_number_specified==0xABBA && interface_type=="CORE") {
-              // CORE
-              int read_rate;
-              nh_->get_parameter("device_info." + name + ".read_rate", read_rate);
-              driver->setTools(model_number_specified_16, id);
-              CoreHardwareInterface *interface = new CoreHardwareInterface(nh_, driver, id, read_rate);
-              // turn on power, just to be sure
-              interface->write(nh_->get_clock()->now(), rclcpp::Duration::from_nanoseconds(1e9*0));
-              interfaces_on_port.push_back(interface);
-            } else if (model_number_specified==0 && !only_imu_) {//model number is currently 0 on foot sensors
-              // bitfoot
-              std::string topic;
-              if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
-                RCLCPP_WARN(nh_->get_logger(), "Bitfoot topic not specified");
+              // check if the specified model number matches the actual model number of the device
+              if (model_number_specified_16 != *model_number_returned_16) {
+                  RCLCPP_WARN(nh_->get_logger(), "Model number of id %d does not match", id);
               }
-              BitFootHardwareInterface *interface = new BitFootHardwareInterface(nh_, driver, id, topic, name);
-              interfaces_on_port.push_back(interface);
-            } else if (model_number_specified==0xBAFF && interface_type=="IMU" && !only_pressure_) {
-              //IMU
-              std::string topic;
-              if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
-                RCLCPP_WARN(nh_->get_logger(), "IMU topic not specified");
-              }
-              std::string frame;
-              if (!nh_->get_parameter("device_info." + name + ".frame", frame)) {
-                RCLCPP_WARN(nh_->get_logger(), "IMU frame not specified");
-              }
-              driver->setTools(model_number_specified_16, id);
-              ImuHardwareInterface *interface = new ImuHardwareInterface(nh_, driver, id, topic, frame, name);
-              /* Hardware interfaces must be registered at the main RobotHW class.
-               * Therefore, a pointer to this class is passed down to the RobotHW classes
-               * registering further interfaces */
-              interfaces_on_port.push_back(interface);
-            } else if (model_number_specified==0xBAFF && interface_type=="Button" && !only_pressure_) {
-              // Buttons
-              std::string topic;
-              if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
-                RCLCPP_WARN(nh_->get_logger(), "Button topic not specified");
-              }
-              int read_rate;
-              nh_->get_parameter("device_info." + name + ".read_rate", read_rate);
-              interfaces_on_port.push_back(new ButtonHardwareInterface(nh_, driver, id, topic, read_rate));
-            } else if ((model_number_specified==0xBAFF || model_number_specified==0xABBA) && interface_type=="LED"
-                && !only_pressure_) {
-              // LEDs
-              int number_of_LEDs, start_number;
-              nh_->get_parameter("device_info." + name + ".number_of_LEDs", number_of_LEDs);
-              nh_->get_parameter("device_info." + name + ".start_number", start_number);
-              interfaces_on_port.push_back(new LedsHardwareInterface(nh_, driver, id, number_of_LEDs, start_number));
-            } else if ((model_number_specified==311 || model_number_specified==321 || model_number_specified==1100)
-                && !only_pressure_
-                && !only_imu_) {
-              // Servos
-              // We need to add the tool to the driver for later reading and writing
-              driver->setTools(model_number_specified_16, id);
-              float mounting_offset;
-              nh_->get_parameter_or("device_info." + name + ".mounting_offset", mounting_offset, 0.0f);
-              float joint_offset;
-              nh_->get_parameter_or("device_info." + name + ".joint_offset", joint_offset, 0.0f);
-              servos_on_port.push_back(std::make_tuple(id, name, mounting_offset, joint_offset));
-            } else {
+              // ping was successful, add device correspondingly
+              // only add them if the mode is set correspondingly
+              // TODO maybe move more of the parameter stuff in the init of the modules instead of doing everything here
+              if (model_number_specified == 0xABBA && interface_type == "CORE") {
+                  // CORE
+                  int read_rate;
+                  nh_->get_parameter("device_info." + name + ".read_rate", read_rate);
+                  driver->setTools(model_number_specified_16, id);
+                  CoreHardwareInterface *interface = new CoreHardwareInterface(nh_, driver, id, read_rate);
+                  // turn on power, just to be sure
+                  interface->write(nh_->get_clock()->now(), rclcpp::Duration::from_nanoseconds(1e9 * 0));
+                  interfaces_on_port.push_back(interface);
+              } else if (model_number_specified == 0 && !only_imu_) {//model number is currently 0 on foot sensors
+                  // bitfoot
+                  std::string topic;
+                  if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
+                      RCLCPP_WARN(nh_->get_logger(), "Bitfoot topic not specified");
+                  }
+                  BitFootHardwareInterface *interface = new BitFootHardwareInterface(nh_, driver, id, topic, name);
+                  interfaces_on_port.push_back(interface);
+              } else if (model_number_specified == 0xBAFF && interface_type == "IMU" && !only_pressure_) {
+                  //IMU
+                  std::string topic;
+                  if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
+                      RCLCPP_WARN(nh_->get_logger(), "IMU topic not specified");
+                  }
+                  std::string frame;
+                  if (!nh_->get_parameter("device_info." + name + ".frame", frame)) {
+                      RCLCPP_WARN(nh_->get_logger(), "IMU frame not specified");
+                  }
+                  driver->setTools(model_number_specified_16, id);
+                  ImuHardwareInterface *interface = new ImuHardwareInterface(nh_, driver, id, topic, frame, name);
+                  /* Hardware interfaces must be registered at the main RobotHW class.
+                   * Therefore, a pointer to this class is passed down to the RobotHW classes
+                   * registering further interfaces */
+                  interfaces_on_port.push_back(interface);
+              } else if (model_number_specified == 0xBAFF && interface_type == "Button" && !only_pressure_) {
+                  // Buttons
+                  std::string topic;
+                  if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
+                      RCLCPP_WARN(nh_->get_logger(), "Button topic not specified");
+                  }
+                  int read_rate;
+                  nh_->get_parameter("device_info." + name + ".read_rate", read_rate);
+                  interfaces_on_port.push_back(new ButtonHardwareInterface(nh_, driver, id, topic, read_rate));
+              } else if ((model_number_specified == 0xBAFF || model_number_specified == 0xABBA) &&
+                         interface_type == "LED"
+                         && !only_pressure_) {
+                  // LEDs
+                  int number_of_LEDs, start_number;
+                  nh_->get_parameter("device_info." + name + ".number_of_LEDs", number_of_LEDs);
+                  nh_->get_parameter("device_info." + name + ".start_number", start_number);
+                  interfaces_on_port.push_back(
+                      new LedsHardwareInterface(nh_, driver, id, number_of_LEDs, start_number));
+              } else if (
+                  (model_number_specified == 311 || model_number_specified == 321 || model_number_specified == 1100)
+                  && !only_pressure_
+                  && !only_imu_) {
+                  // Servos
+                  // We need to add the tool to the driver for later reading and writing
+                  driver->setTools(model_number_specified_16, id);
+                  float mounting_offset;
+                  nh_->get_parameter_or("device_info." + name + ".mounting_offset", mounting_offset, 0.0f);
+                  float joint_offset;
+                  nh_->get_parameter_or("device_info." + name + ".joint_offset", joint_offset, 0.0f);
+                  servos_on_port.push_back(std::make_tuple(id, name, mounting_offset, joint_offset));
+              } else if (
+                  model_number_specified == 0xABCD && !only_pressure_ && !only_imu_) {
+                  // Hall Sensor
+                  std::string topic;
+                  if (!nh_->get_parameter("device_info." + name + ".topic", topic)) {
+                      RCLCPP_WARN(nh_->get_logger(), "Hall Sensor topic not specified");
+                  }
+                  driver->setTools(model_number_specified_16, id);
+                  HallHardwareInterface *interface = new HallHardwareInterface(nh_, driver, id, topic, name);
+                  /* Hardware interfaces must be registered at the main RobotHW class.
+                   * Therefore, a pointer to this class is passed down to the RobotHW classes
+                   * registering further interfaces */
+                  interfaces_on_port.push_back(interface);
+              } else {
               if (!only_pressure_ && !only_imu_) {
                 RCLCPP_WARN(nh_->get_logger(), "Could not identify device for ID %d", id);
               }
