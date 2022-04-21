@@ -13,7 +13,7 @@
 #include <bitbots_ros_control/button_hardware_interface.h>
 #include <bitbots_ros_control/leds_hardware_interface.h>
 #include <bitbots_ros_control/hardware_interface.h>
-#include <bitbots_ros_control/hall_hardware_interface.h>
+#include <bitbots_ros_control/hall_hardware_interface.hpp>
 #include <rcl_interfaces/msg/list_parameters_result.hpp>
 
 namespace bitbots_ros_control {
