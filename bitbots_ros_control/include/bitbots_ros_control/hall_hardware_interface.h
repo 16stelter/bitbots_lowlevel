@@ -5,6 +5,9 @@
 #include <string>
 
 #include <bitbots_ros_control/hardware_interface.h>
+#include <bitbots_msgs/msg/float_stamped.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
 #include <dynamixel_driver.h>
 
 namespace bitbots_ros_control {
@@ -32,7 +35,8 @@ namespace bitbots_ros_control {
 
             std::vector<float> current_angle_;
             bitbots_msgs::msg::FloatStamped msg_;
-            rclcpp::Publisher<bitbots_msgs::msg::FloatStamped>::SharedPtr angle_pub_; //TODO: define angle message
+            rclcpp::Publisher<bitbots_msgs::msg::FloatStamped>::SharedPtr angle_pub_;
+            rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagnostic_pub_;
     };
 }
 
