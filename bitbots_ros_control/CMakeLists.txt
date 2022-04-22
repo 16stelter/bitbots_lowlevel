@@ -38,6 +38,7 @@ add_compile_options(-Wall -Werror -Wno-unused -pedantic -Wextra)
 set(SOURCES
         src/bitfoot_hardware_interface.cpp
         src/button_hardware_interface.cpp
+        src/hall_hardware_interface.cpp
         src/core_hardware_interface.cpp
         src/dynamixel_servo_hardware_interface.cpp
         src/imu_hardware_interface.cpp
@@ -47,7 +48,7 @@ set(SOURCES
         src/utils.cpp
         src/wolfgang_hardware_interface.cpp include/bitbots_ros_control/hardware_interface.h)
 
-enable_bitbots_docs()
+#enable_bitbots_docs()
 
 add_executable(node ${SOURCES})
 ament_target_dependencies(node
