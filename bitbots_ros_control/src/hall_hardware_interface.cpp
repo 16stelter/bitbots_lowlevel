@@ -49,8 +49,8 @@ namespace bitbots_ros_control {
             status.hardware_id = std::to_string(id_);
 
             bool okay = false;
-            for (size_t j = 0; j < current_pangle_.size(); j++) {
-                if (current_angle[-1] != current_angle_[j]) {
+            for (size_t j = 0; j < current_angle_.size(); j++) {
+                if (current_angle_[-1] != current_angle_[j]) {
                     okay = true;
                     break;
                 }
