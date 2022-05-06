@@ -13,7 +13,7 @@ node = Node("calibration_node")
 
 
 node.get_logger().info("Waiting for " + "/foot_pressure_left/set_foot_zero" + "/foot_pressure_left/set_foot_scale"
-              + "/foot_pressure_right/set_foot_zero" +"/foot_pressure_right/set_foot_scale")
+              + "/foot_pressure_right/set_foot_zero" + "/foot_pressure_right/set_foot_scale")
 
 zero_l = node.create_client(Empty, "/foot_pressure_left/set_foot_zero")
 zero_r = node.create_client(Empty, "/foot_pressure_right/set_foot_zero")
