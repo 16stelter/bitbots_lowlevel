@@ -40,6 +40,18 @@ PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
   sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw",
                         1, std::bind(&PressureConverter::pressureCallback, this, _1));
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
+
+  while(rclcpp::ok()) {
+      if(save_zero_and_scale_values_) {
+        if(int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
+            RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
+        }
+        else {
+            save_zero_and_scale_values_ = false;
+        }
+      }
+      rclcpp:spin_some(nh_);
+  }
 }
 
 void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressure_raw) {
@@ -128,11 +140,7 @@ void PressureConverter::resetZeroAndScaleValues() {
 }
 
 void PressureConverter::collectMessages() {
-    save_zero_and_scale_values_ = true;
-        while (int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
-            RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
-        }
-    save_zero_and_scale_values_ = false;
+  save_zero_and_scale_values_ = true;
 }
 
 void PressureConverter::saveYAML() {
@@ -210,10 +218,5 @@ int main(int argc, char *argv[]) {
     rclcpp::executors::StaticSingleThreadedExecutor executor;
     executor.add_node(nh);
 
-    PressureConverter r(nh, 'r');
-    PressureConverter l(nh, 'l');
-
-    executor.spin();
-
-    return 0;
+  return 0;
 }
