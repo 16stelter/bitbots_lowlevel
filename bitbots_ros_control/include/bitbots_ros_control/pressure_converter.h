@@ -32,6 +32,8 @@ class PressureConverter {
   int average_, scale_and_zero_average_;
   double cop_threshold_;
   char side_;
+  std::string req_type_;
+  std::shared_ptr<bitbots_msgs::srv::FootScale::Request> request_;
   std::string scale_lr_, zero_lr_, cop_lr_, sole_lr_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr zero_service_;
   rclcpp::Service<bitbots_msgs::srv::FootScale>::SharedPtr scale_service_;
