@@ -22,79 +22,24 @@ PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
         RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() <<": average not specified");
     average_ = nh_->get_parameter("average").as_int();
 
-    if (!nh_->has_parameter("scale_and_zero_average"))
-        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() <<": scale_and_zero_average not specified");
-    scale_and_zero_average_ = nh_->get_parameter("scale_and_zero_average").as_int();
-
-    scale_lr_ = "scale_";
-    scale_lr_ += side;
-    zero_lr_ = "zero_";
-    zero_lr_ += side;
-    cop_lr_ = "cop_";
-    cop_lr_ += side;
-    sole_lr_ = side;
-    sole_lr_ += "_sole";
-
-    if (!nh_->has_parameter(zero_lr_)) {
-        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": " << zero_lr_ << " not specified");
-        zero_ = {0, 0, 0, 0};
-    }else{
-        zero_ = nh_->get_parameter(zero_lr_).as_double_array();
-    }
-
-    if (!nh_->has_parameter(scale_lr_)) {
-        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name()  << ": " << scale_lr_ << " not specified");
-        scale_ = {1, 1, 1, 1};
-    }else{
-        scale_ = nh_->get_parameter(scale_lr_).as_double_array();
-    }
-    if (!nh_->has_parameter("cop_threshold"))
-        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": cop_threshold not specified");
-    cop_threshold_ = nh_->get_parameter("cop_threshold").as_double();
-
-    side_ = side;
-
-    // initialize vector for previous values for average calculations
-    for (int i = 0; i < 4; i++) {
-        std::vector<double> x;
-        for (int j = 0; j < average_; j++) {
-            x.push_back(0.0);
-        }
-        previous_values_.push_back(x);
-    }
-    current_index_ = 0;
-
-    save_zero_and_scale_values_ = false;
-    resetZeroAndScaleValues();
-
-    filtered_pub_ = nh_->create_publisher<bitbots_msgs::msg::FootPressure>(topic + "/filtered", 1);
-    cop_pub_ = nh_->create_publisher<geometry_msgs::msg::PointStamped>("/" + cop_lr_, 1);
-    std::string wrench_topics[] = {"l_front", "l_back", "r_front", "r_back", "cop"};
-    for (int i = 0; i < 5; i++) {
-        std::stringstream single_wrench_topic;
-        single_wrench_topic << topic << "/wrench/" << wrench_topics[i];
-        wrench_pubs_.push_back(nh_->create_publisher<geometry_msgs::msg::WrenchStamped>(single_wrench_topic.str(), 1));
-    }
-    for (int i = 0; i < 4; i++) {
-        std::stringstream single_wrench_frame;
-        single_wrench_frame << side << "_" << "cleat_" << wrench_topics[i];
-        wrench_frames_.push_back(single_wrench_frame.str());
-    }
-
-    scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2), rmw_qos_profile_services_default);
-    zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2), rmw_qos_profile_services_default);
-    rclcpp::SubscriptionOptions options;
-    rclcpp::QoS qos(0);
-    options.callback_group = sub_cbg_;
-    sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw", qos, std::bind(&PressureConverter::pressureCallback, this, _1), options);
-    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
-
-
-    sub_executor_.add_callback_group(sub_cbg_, nh_->get_node_base_interface());
-    sub_executor_thread_ = new std::thread(
-        [this]() {
-            sub_executor_.spin();
-        });
+  filtered_pub_ = nh_->create_publisher<bitbots_msgs::msg::FootPressure>(topic + "/filtered", 1);
+  cop_pub_ = nh_->create_publisher<geometry_msgs::msg::PointStamped>("/" + cop_lr_, 1);
+  std::string wrench_topics[] = {"l_front", "l_back", "r_front", "r_back", "cop"};
+  for (int i = 0; i < 5; i++) {
+    std::stringstream single_wrench_topic;
+    single_wrench_topic << topic << "/wrench/" << wrench_topics[i];
+    wrench_pubs_.push_back(nh_->create_publisher<geometry_msgs::msg::WrenchStamped>(single_wrench_topic.str(), 1));
+  }
+  for (int i = 0; i < 4; i++) {
+    std::stringstream single_wrench_frame;
+    single_wrench_frame << side << "_" << "cleat_" << wrench_topics[i];
+    wrench_frames_.push_back(single_wrench_frame.str());
+  }
+  scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2));
+  zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2));
+  sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw",
+                        1, std::bind(&PressureConverter::pressureCallback, this, _1));
+  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
 }
 
 void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressure_raw) {
