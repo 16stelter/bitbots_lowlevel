@@ -6,8 +6,6 @@ using std::placeholders::_2;
 PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
     nh_ = nh;
     std::string topic;
-    rclcpp::CallbackGroup::SharedPtr sub_cbg_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-
     if (side == 'l') {
         if (!nh_->has_parameter("left_topic"))
             RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": left_topic not specified");
@@ -22,57 +20,69 @@ PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
         RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() <<": average not specified");
     average_ = nh_->get_parameter("average").as_int();
 
-  filtered_pub_ = nh_->create_publisher<bitbots_msgs::msg::FootPressure>(topic + "/filtered", 1);
-  cop_pub_ = nh_->create_publisher<geometry_msgs::msg::PointStamped>("/" + cop_lr_, 1);
-  std::string wrench_topics[] = {"l_front", "l_back", "r_front", "r_back", "cop"};
-  for (int i = 0; i < 5; i++) {
-    std::stringstream single_wrench_topic;
-    single_wrench_topic << topic << "/wrench/" << wrench_topics[i];
-    wrench_pubs_.push_back(nh_->create_publisher<geometry_msgs::msg::WrenchStamped>(single_wrench_topic.str(), 1));
-  }
-  for (int i = 0; i < 4; i++) {
-    std::stringstream single_wrench_frame;
-    single_wrench_frame << side << "_" << "cleat_" << wrench_topics[i];
-    wrench_frames_.push_back(single_wrench_frame.str());
-  }
-  scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2));
-  zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2));
-  sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw",
-                        1, std::bind(&PressureConverter::pressureCallback, this, _1));
-  tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
+    if (!nh_->has_parameter("scale_and_zero_average"))
+        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() <<": scale_and_zero_average not specified");
+    scale_and_zero_average_ = nh_->get_parameter("scale_and_zero_average").as_int();
 
-  while(rclcpp::ok()) {
-      if(save_zero_and_scale_values_) {
-        if(int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
-            RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
-        }
-        else {
-            save_zero_and_scale_values_ = false;
-            if(req_type_ == "scale") {
-                double average =
-                    std::accumulate(zero_and_scale_values_[request_->sensor].begin(), zero_and_scale_values_[request_->sensor].end(), 0.0)
-                    / zero_and_scale_values_[request_->sensor].size();
-                RCLCPP_WARN_STREAM(nh_->get_logger(), "avg: " << average);
-                average -= zero_[request_->sensor];
-                RCLCPP_WARN_STREAM(nh_->get_logger(), "avg_after: " << average);
+    scale_lr_ = "scale_";
+    scale_lr_ += side;
+    zero_lr_ = "zero_";
+    zero_lr_ += side;
+    cop_lr_ = "cop_";
+    cop_lr_ += side;
+    sole_lr_ = side;
+    sole_lr_ += "_sole";
 
-                scale_[request_->sensor] = request_->weight / average;
-                resetZeroAndScaleValues();
-                nh_->set_parameter(rclcpp::Parameter(scale_lr_, rclcpp::ParameterValue(scale_)));
-            }
-            else {
-                for (int i = 0; i < 4; i++) {
-                    zero_[i] = std::accumulate(zero_and_scale_values_[i].begin(), zero_and_scale_values_[i].end(), 0.0)
-                               / zero_and_scale_values_[i].size();
-                }
-                resetZeroAndScaleValues();
-                nh_->set_parameter(rclcpp::Parameter(zero_lr_, rclcpp::ParameterValue(zero_)));
-            }
-            saveYAML();
+    if (!nh_->has_parameter(zero_lr_)) {
+        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": " << zero_lr_ << " not specified");
+        zero_ = {0, 0, 0, 0};
+    }else{
+        zero_ = nh_->get_parameter(zero_lr_).as_double_array();
+    }
+
+    if (!nh_->has_parameter(scale_lr_)) {
+        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name()  << ": " << scale_lr_ << " not specified");
+        scale_ = {1, 1, 1, 1};
+    }else{
+        scale_ = nh_->get_parameter(scale_lr_).as_double_array();
+    }
+    if (!nh_->has_parameter("cop_threshold"))
+        RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": cop_threshold not specified");
+    cop_threshold_ = nh_->get_parameter("cop_threshold").as_double();
+
+    side_ = side;
+
+    // initialize vector for previous values for average calculations
+    for (int i = 0; i < 4; i++) {
+        std::vector<double> x;
+        for (int j = 0; j < average_; j++) {
+            x.push_back(0.0);
         }
-      }
-      rclcpp:spin_some(nh_);
-  }
+        previous_values_.push_back(x);
+    }
+    current_index_ = 0;
+
+    save_zero_and_scale_values_ = false;
+    resetZeroAndScaleValues();
+
+    filtered_pub_ = nh_->create_publisher<bitbots_msgs::msg::FootPressure>(topic + "/filtered", 1);
+    cop_pub_ = nh_->create_publisher<geometry_msgs::msg::PointStamped>("/" + cop_lr_, 1);
+    std::string wrench_topics[] = {"l_front", "l_back", "r_front", "r_back", "cop"};
+    for (int i = 0; i < 5; i++) {
+        std::stringstream single_wrench_topic;
+        single_wrench_topic << topic << "/wrench/" << wrench_topics[i];
+        wrench_pubs_.push_back(nh_->create_publisher<geometry_msgs::msg::WrenchStamped>(single_wrench_topic.str(), 1));
+    }
+    for (int i = 0; i < 4; i++) {
+        std::stringstream single_wrench_frame;
+        single_wrench_frame << side << "_" << "cleat_" << wrench_topics[i];
+        wrench_frames_.push_back(single_wrench_frame.str());
+    }
+    scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2));
+    zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2));
+    sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw",
+                                                                     1, std::bind(&PressureConverter::pressureCallback, this, _1));
+    tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
 }
 
 void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressure_raw) {
@@ -149,7 +159,6 @@ void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressur
     w_cop.header.stamp = pressure_raw.header.stamp;
     w_cop.wrench.force.z = sum_of_forces;
     wrench_pubs_[4]->publish(w_cop);
-
 }
 
 void PressureConverter::resetZeroAndScaleValues() {
@@ -161,7 +170,11 @@ void PressureConverter::resetZeroAndScaleValues() {
 }
 
 void PressureConverter::collectMessages() {
-  save_zero_and_scale_values_ = true;
+    save_zero_and_scale_values_ = true;
+    while (int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
+        RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
+    }
+    save_zero_and_scale_values_ = false;
 }
 
 void PressureConverter::saveYAML() {
@@ -181,10 +194,6 @@ void PressureConverter::saveYAML() {
 
     YAML::Emitter e;
     e << YAML::BeginMap;
-    e << YAML::Key << "pressure_converter";
-    e << YAML::BeginMap;
-    e<< YAML::Key << "ros__parameters";
-    e << YAML::BeginMap;
     e << YAML::Key << "zero_r";
     e << YAML::Value << zero_r;
     e << YAML::Key << "zero_l";
@@ -194,7 +203,6 @@ void PressureConverter::saveYAML() {
     e << YAML::Key << "scale_l";
     e << YAML::Value << scale_r;
     e << YAML::EndMap;
-    e << YAML::EndMap;
 
     std::ofstream yaml_file;
     yaml_file.open(path_to_yaml);
@@ -203,16 +211,31 @@ void PressureConverter::saveYAML() {
 }
 
 bool PressureConverter::scaleCallback(const std::shared_ptr<bitbots_msgs::srv::FootScale::Request> req, std::shared_ptr<bitbots_msgs::srv::FootScale::Response> resp) {
-  collectMessages();
-  request_ = req;
-  req_type_ = "scale";
-  return true;
+    std::thread{std::bind(&PressureConverter::collectMessages, this)}.detach();
+    double average =
+        std::accumulate(zero_and_scale_values_[req->sensor].begin(), zero_and_scale_values_[req->sensor].end(), 0.0)
+        / zero_and_scale_values_[req->sensor].size();
+    RCLCPP_WARN_STREAM(nh_->get_logger(), "avg: " << average);
+    average -= zero_[req->sensor];
+    RCLCPP_WARN_STREAM(nh_->get_logger(), "avg_after: " << average);
+
+    scale_[req->sensor] = req->weight / average;
+    resetZeroAndScaleValues();
+    nh_->set_parameter(rclcpp::Parameter(scale_lr_, rclcpp::ParameterValue(scale_)));
+    saveYAML();
+    return true;
 }
 
 bool PressureConverter::zeroCallback(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> resp) {
-  collectMessages();
-  req_type_ = "zero";
-  return true;
+    std::thread{std::bind(&PressureConverter::collectMessages, this)}.detach();
+    for (int i = 0; i < 4; i++) {
+        zero_[i] = std::accumulate(zero_and_scale_values_[i].begin(), zero_and_scale_values_[i].end(), 0.0)
+                   / zero_and_scale_values_[i].size();
+    }
+    resetZeroAndScaleValues();
+    nh_->set_parameter(rclcpp::Parameter(zero_lr_, rclcpp::ParameterValue(zero_)));
+    saveYAML();
+    return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -221,8 +244,10 @@ int main(int argc, char *argv[]) {
     rclcpp::NodeOptions options = rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true);
     rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("pressure_converter", options);
 
-    rclcpp::executors::StaticSingleThreadedExecutor executor;
-    executor.add_node(nh);
+    PressureConverter r(nh, 'r');
+    PressureConverter l(nh, 'l');
 
-  return 0;
+    rclcpp::spin(nh);
+
+    return 0;
 }
