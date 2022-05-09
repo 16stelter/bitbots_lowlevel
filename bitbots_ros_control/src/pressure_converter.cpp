@@ -194,6 +194,10 @@ void PressureConverter::saveYAML() {
 
     YAML::Emitter e;
     e << YAML::BeginMap;
+    e << YAML::Key << "pressure_converter";
+    e << YAML::BeginMap;
+    e<< YAML::Key << "ros__parameters";
+    e << YAML::BeginMap;
     e << YAML::Key << "zero_r";
     e << YAML::Value << zero_r;
     e << YAML::Key << "zero_l";
@@ -202,6 +206,8 @@ void PressureConverter::saveYAML() {
     e << YAML::Value << scale_r;
     e << YAML::Key << "scale_l";
     e << YAML::Value << scale_r;
+    e << YAML::EndMap;
+    e << YAML::EndMap;
     e << YAML::EndMap;
 
     std::ofstream yaml_file;
