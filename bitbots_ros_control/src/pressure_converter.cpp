@@ -2,9 +2,12 @@
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+
 PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
     nh_ = nh;
     std::string topic;
+    rclcpp::CallbackGroup::SharedPtr sub_cbg_ = nh_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
     if (side == 'l') {
         if (!nh_->has_parameter("left_topic"))
             RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": left_topic not specified");
@@ -77,11 +80,21 @@ PressureConverter::PressureConverter(rclcpp::Node::SharedPtr nh, char side){
         single_wrench_frame << side << "_" << "cleat_" << wrench_topics[i];
         wrench_frames_.push_back(single_wrench_frame.str());
     }
-    scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2));
-    zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2));
-    sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw",
-                                                                     1, std::bind(&PressureConverter::pressureCallback, this, _1));
+
+    scale_service_ = nh_->create_service<bitbots_msgs::srv::FootScale>(topic + "/set_foot_scale", std::bind(&PressureConverter::scaleCallback, this, _1, _2), rmw_qos_profile_services_default);
+    zero_service_ = nh_->create_service<std_srvs::srv::Empty>(topic + "/set_foot_zero", std::bind(&PressureConverter::zeroCallback, this, _1, _2), rmw_qos_profile_services_default);
+    rclcpp::SubscriptionOptions options;
+    rclcpp::QoS qos(0);
+    options.callback_group = sub_cbg_;
+    sub_ = nh_->create_subscription<bitbots_msgs::msg::FootPressure>(topic + "/raw", qos, std::bind(&PressureConverter::pressureCallback, this, _1), options);
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*nh_);
+
+
+    sub_executor_.add_callback_group(sub_cbg_, nh_->get_node_base_interface());
+    sub_executor_thread_ = new std::thread(
+        [this]() {
+            sub_executor_.spin();
+        });
 }
 
 void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressure_raw) {
@@ -158,6 +171,7 @@ void PressureConverter::pressureCallback(bitbots_msgs::msg::FootPressure pressur
     w_cop.header.stamp = pressure_raw.header.stamp;
     w_cop.wrench.force.z = sum_of_forces;
     wrench_pubs_[4]->publish(w_cop);
+
 }
 
 void PressureConverter::resetZeroAndScaleValues() {
@@ -170,9 +184,9 @@ void PressureConverter::resetZeroAndScaleValues() {
 
 void PressureConverter::collectMessages() {
     save_zero_and_scale_values_ = true;
-    while (int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
-        RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
-    }
+        while (int(zero_and_scale_values_[0].size()) < scale_and_zero_average_) {
+            RCLCPP_WARN_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 0.25, "%ld of %d msgs", zero_and_scale_values_[0].size(), scale_and_zero_average_);
+        }
     save_zero_and_scale_values_ = false;
 }
 
@@ -207,7 +221,6 @@ void PressureConverter::saveYAML() {
     e << YAML::Value << scale_r;
     e << YAML::EndMap;
     e << YAML::EndMap;
-    e << YAML::EndMap;
 
     std::ofstream yaml_file;
     yaml_file.open(path_to_yaml);
@@ -216,7 +229,7 @@ void PressureConverter::saveYAML() {
 }
 
 bool PressureConverter::scaleCallback(const std::shared_ptr<bitbots_msgs::srv::FootScale::Request> req, std::shared_ptr<bitbots_msgs::srv::FootScale::Response> resp) {
-    std::thread{std::bind(&PressureConverter::collectMessages, this)}.detach();
+    collectMessages();
     double average =
         std::accumulate(zero_and_scale_values_[req->sensor].begin(), zero_and_scale_values_[req->sensor].end(), 0.0)
         / zero_and_scale_values_[req->sensor].size();
@@ -232,7 +245,7 @@ bool PressureConverter::scaleCallback(const std::shared_ptr<bitbots_msgs::srv::F
 }
 
 bool PressureConverter::zeroCallback(const std::shared_ptr<std_srvs::srv::Empty::Request> req, std::shared_ptr<std_srvs::srv::Empty::Response> resp) {
-    std::thread{std::bind(&PressureConverter::collectMessages, this)}.detach();
+    collectMessages();
     for (int i = 0; i < 4; i++) {
         zero_[i] = std::accumulate(zero_and_scale_values_[i].begin(), zero_and_scale_values_[i].end(), 0.0)
                    / zero_and_scale_values_[i].size();
@@ -249,10 +262,13 @@ int main(int argc, char *argv[]) {
     rclcpp::NodeOptions options = rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true);
     rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("pressure_converter", options);
 
+    rclcpp::executors::StaticSingleThreadedExecutor executor;
+    executor.add_node(nh);
+
     PressureConverter r(nh, 'r');
     PressureConverter l(nh, 'l');
 
-    rclcpp::spin(nh);
+    executor.spin();
 
     return 0;
 }
