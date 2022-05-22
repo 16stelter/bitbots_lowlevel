@@ -26,6 +26,7 @@ find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(transmission_interface REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(backward_ros REQUIRED)
 
 
 set(INCLUDE_DIRS include)
@@ -70,7 +71,8 @@ ament_target_dependencies(node
         std_srvs
         tf2_ros
         transmission_interface
-        yaml-cpp)
+        yaml-cpp
+        backward_ros)
 
 add_executable(pressure_converter src/pressure_converter.cpp)
 ament_target_dependencies(pressure_converter
