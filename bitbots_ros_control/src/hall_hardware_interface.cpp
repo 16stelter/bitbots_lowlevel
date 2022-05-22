@@ -17,6 +17,10 @@ namespace bitbots_ros_control {
 
     bool HallHardwareInterface::init() {
         data_ = (uint8_t *) malloc(4 * sizeof(uint8_t));
+
+        angle_pub_ = nh_->create_publisher<bitbots_msgs::msg::FloatStamped>(topic_name_, 1);
+        diagnostic_pub_ = nh_->create_publisher<diagnostic_msgs::msg::DiagnosticArray>("/diagnostics", 1);
+
         return true;
     }
 

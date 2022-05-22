@@ -28,7 +28,6 @@ find_package(transmission_interface REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(backward_ros REQUIRED)
 
-
 set(INCLUDE_DIRS include)
 include_directories(${INCLUDE_DIRS})
 
@@ -96,7 +95,8 @@ ament_target_dependencies(pressure_converter
         std_srvs
         tf2_ros
         transmission_interface
-        yaml-cpp)
+        yaml-cpp
+        backward_ros)
 
 add_executable(hall_converter src/hall_converter.cpp)
 ament_target_dependencies(hall_converter
