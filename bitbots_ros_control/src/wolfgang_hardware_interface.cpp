@@ -99,6 +99,7 @@ bool WolfgangHardwareInterface::create_interfaces(std::vector<std::pair<std::str
           nh_->get_parameter("device_info." + name + ".interface_type", interface_type);
           uint16_t model_number_specified_16 = uint16_t(model_number_specified);
           uint16_t *model_number_returned_16 = new uint16_t;
+            RCLCPP_WARN_STREAM(nh_->get_logger(), "" << id << " " << model_number_specified_16);
           if (driver->ping(uint8_t(id), model_number_returned_16)) {
               // check if the specified model number matches the actual model number of the device
               if (model_number_specified_16 != *model_number_returned_16) {
@@ -206,7 +207,7 @@ bool WolfgangHardwareInterface::create_interfaces(std::vector<std::pair<std::str
 
   if (pinged.size()!=dxl_devices.size()) {
     // when we only have 1 or two devices it's only the core
-    if (pinged.empty() || pinged.size()==1 || pinged.size()==2) {
+    if (pinged.empty()) {
       RCLCPP_ERROR_THROTTLE(nh_->get_logger(), *nh_->get_clock(), 5000, "Could not start ros control. Power is off!");
       speakError(speak_pub_, "Could not start ross control. Power is off!");
     } else {
