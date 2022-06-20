@@ -209,13 +209,13 @@ wolfgang_hardware_interface:
         model_number: 311
         mounting_offset: 0.0
         joint_offset: 0.0
-      HallRight:
-        id: 81
-        model_number: 0xABCD
-        interface_type: Hall
-        topic: /hall/right/raw
       HallLeft:
         id: 82
         model_number: 0xABCD
         interface_type: Hall
         topic: /hall/left/raw
+      HallRight:
+        id: 83
+        model_number: 0xABCD
+        interface_type: Hall
+        topic: /hall/right/raw
