@@ -219,9 +219,9 @@ wolfgang_hardware_interface:
         id: 81
         model_number: 0xABCD
         interface_type: Hall
-        topic: /hall/right
+        topic: /hall/right/raw
       HallLeft:
         id: 82
         model_number: 0xABCD
         interface_type: Hall
-        topic: /hall/left
+        topic: /hall/left/raw
