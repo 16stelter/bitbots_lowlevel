@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import time
 import rclpy
 from rclpy.node import Node
@@ -10,21 +12,21 @@ class Calibration:
     def __init__(self):
         rclpy.init(args=None)
         self.node = Node("calibration_node")
-        self.cfgpath = ament_index_python.get_package_share_directory("data_reader") + "/config/sensors.yaml"
+        self.cfgpath = ament_index_python.get_package_share_directory("bitbots_ros_control") + "/config/hall.yaml"
 
         self.loffset = 0
         self.roffset = 0
 
-        self.lsub = self.node.create_subscription(FloatStamped, "/hall/left", self.l_cb, 1)
-        self.rsub = self.node.create_subscription(FloatStamped, "/hall/right", self.r_cb, 1)
+        self.lsub = self.node.create_subscription(FloatStamped, "/hall/left/raw", self.l_cb, 1)
+        self.rsub = self.node.create_subscription(FloatStamped, "/hall/right/raw", self.r_cb, 1)
         self.mgpub = self.node.create_publisher(JointCommand, "DynamixelController/command", 1)
 
     def l_cb(self, msg):
-        self.loffset = 2048 - msg.value  # Dynamixel 2048 = 0 degrees
+        self.loffset = 1088 - msg.value  # Dynamixel 2048 = 0 degrees, this is PWM offset
         return
 
     def r_cb(self, msg):
-        self.roffset = 2048 - msg.value # Dynamixel 2048 = 0 degrees
+        self.roffset = 1088 - msg.value # Dynamixel 2048 = 0 degrees, this is PWM offset
         return
 
     def main(self):
