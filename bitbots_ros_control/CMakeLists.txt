@@ -95,8 +95,7 @@ ament_target_dependencies(pressure_converter
         std_srvs
         tf2_ros
         transmission_interface
-        yaml-cpp
-        backward_ros)
+        yaml-cpp)
 
 add_executable(hall_converter src/hall_converter.cpp)
 ament_target_dependencies(hall_converter

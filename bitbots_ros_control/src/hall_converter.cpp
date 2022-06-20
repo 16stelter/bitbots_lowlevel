@@ -37,22 +37,7 @@ HallConverter::HallConverter(rclcpp::Node::SharedPtr nh, char side) {
 }
 
 void HallConverter::hallCb(bitbots_msgs::msg::FloatStamped raw) {
-  double value = raw.value + offset_; // add offset
-  value = (value - 64.0) * 2.0; // to dynamixel
-  if(value < 0) { // wrap around
-    value = 4096.0 - value;
-  }
-  value = std::fmod(value,  4096.0);
-  if(value < 2048.0) { // to angle
-    value = -M_PI + (value / 2048.0) * M_PI;
-  }
-  else {
-    value = ((value - 2048.0) / 2048.0) * M_PI;
-  }
-  bitbots_msgs::msg::FloatStamped msg;
-  msg.value = value;
-  msg.header.stamp = nh_->get_clock()->now();
-  pub_->publish(msg);
+    pub_->publish(raw);
 }
 
 
