@@ -93,6 +93,17 @@ ament_target_dependencies(pressure_converter
         tf2_ros
         transmission_interface
         yaml-cpp)
+
+add_executable(hall_converter src/hall_converter.cpp)
+ament_target_dependencies(hall_converter
+        ament_cmake
+        rclcpp
+        bitbots_msgs
+        realtime_tools
+        rosidl_typesupport_cpp
+        std_msgs
+        std_srvs)
+
 target_link_libraries(pressure_converter yaml-cpp)
 
 ament_export_dependencies(ament_cmake)
@@ -113,6 +124,8 @@ ament_export_dependencies(transmission_interface)
 install(TARGETS node
         DESTINATION lib/${PROJECT_NAME})
 install(TARGETS pressure_converter
+        DESTINATION lib/${PROJECT_NAME})
+install(TARGETS hall_converter
         DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY config
         DESTINATION share/${PROJECT_NAME})
