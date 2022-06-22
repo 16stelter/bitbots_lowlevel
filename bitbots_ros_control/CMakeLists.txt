@@ -28,7 +28,6 @@ find_package(transmission_interface REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(backward_ros REQUIRED)
 
-
 set(INCLUDE_DIRS include)
 include_directories(${INCLUDE_DIRS})
 
