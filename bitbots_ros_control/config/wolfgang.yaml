@@ -225,3 +225,24 @@ wolfgang_hardware_interface:
         model_number: 0xABCD
         interface_type: Hall
         topic: /hall/right/raw
+
+lknee_pid:
+  ros__parameters:
+    p: 0.0
+    i: 0.0
+    d: 0.0
+    i_clamp: 0.0
+    i_clamp_min: 0.0
+    i_clamp_max: 0.0
+    antiwindup: False
+
+rknee_pid:
+  ros__parameters:
+    p: 0.0
+    i: 0.0
+    d: 0.0
+    i_clamp: 0.0
+    i_clamp_min: 0.0
+    i_clamp_max: 0.0
+    antiwindup: False
+

@@ -13,6 +13,8 @@
 #include <std_msgs/msg/int32_multi_array.hpp>
 #include <bitbots_msgs/msg/joint_torque.hpp>
 #include <bitbots_msgs/msg/joint_command.hpp>
+#include <control_toolbox/pid_ros.hpp>
+#include <bitbots_msgs/msg/float_stamped.hpp>
 
 #include <bitbots_ros_control/utils.h>
 #include <bitbots_ros_control/hardware_interface.h>
@@ -57,6 +59,9 @@ class DynamixelServoHardwareInterface : public bitbots_ros_control::HardwareInte
   void read(const rclcpp::Time &t, const rclcpp::Duration &dt);
   void write(const rclcpp::Time &t, const rclcpp::Duration &dt);
   void addBusInterface(ServoBusInterface *bus);
+  std::shared_ptr<rclcpp::Node> lknee_node_;
+  std::shared_ptr<rclcpp::Node> rknee_node_;
+
 
  private:
   rclcpp::Node::SharedPtr nh_;
@@ -65,6 +70,8 @@ class DynamixelServoHardwareInterface : public bitbots_ros_control::HardwareInte
   void setTorqueCb(std_msgs::msg::Bool::SharedPtr enabled);
   void individualTorqueCb(bitbots_msgs::msg::JointTorque msg);
   void commandCb(const bitbots_msgs::msg::JointCommand &command_msg);
+  void hallLCb(const bitbots_msgs::msg::FloatStamped &msg);
+  void hallRCb(const bitbots_msgs::msg::FloatStamped &msg);
 
   std::vector<int32_t> goal_torque_individual_;
 
@@ -89,10 +96,18 @@ class DynamixelServoHardwareInterface : public bitbots_ros_control::HardwareInte
 
   std::map<std::string, int> joint_map_;
 
+  std::shared_ptr<control_toolbox::PidROS> lknee_pid_;
+  std::shared_ptr<control_toolbox::PidROS> rknee_pid_;
+
+  double hall_l_;
+  double hall_r_;
+
   bool torqueless_mode_;
 
   // subscriber / publisher
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr set_torque_sub_;
+  rclcpp::Subscription<bitbots_msgs::msg::FloatStamped>::SharedPtr sub_hall_l_;
+  rclcpp::Subscription<bitbots_msgs::msg::FloatStamped>::SharedPtr sub_hall_r_;
   rclcpp::Subscription<bitbots_msgs::msg::JointTorque>::SharedPtr set_torque_indiv_sub_;
   rclcpp::Subscription<bitbots_msgs::msg::JointCommand>::SharedPtr sub_command_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr pwm_pub_;
