@@ -20,7 +20,6 @@ int main(int argc, char *argv[]) {
   rclcpp::NodeOptions options = rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true).allow_undeclared_parameters(true);
   rclcpp::Node::SharedPtr nh = rclcpp::Node::make_shared("wolfgang_hardware_interface", options);
 
-  // create hardware interfaces
   bitbots_ros_control::WolfgangHardwareInterface hw(nh);
   if (!hw.init()) {
     RCLCPP_ERROR(nh->get_logger(), "Failed to initialize hardware interface.");
@@ -71,8 +70,8 @@ int main(int argc, char *argv[]) {
     //
     hw.write(current_time, period);
     rclcpp::spin_some(nh->get_node_base_interface());
-    rclcpp::spin_some(hw.servo_interface_.lknee_node_);
-    rclcpp::spin_some(hw.servo_interface_.rknee_node_);
+    rclcpp::spin_some(hw.sea_correction_helper_.lknee_node_);
+    rclcpp::spin_some(hw.sea_correction_helper_.rknee_node_);
     rate.sleep();
 
     //

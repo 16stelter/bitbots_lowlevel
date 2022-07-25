@@ -48,6 +48,7 @@ set(SOURCES
         src/node.cpp
         src/servo_bus_interface.cpp
         src/utils.cpp
+        src/sea_correction_helper.cpp
         src/wolfgang_hardware_interface.cpp include/bitbots_ros_control/hardware_interface.h)
 
 #enable_bitbots_docs()

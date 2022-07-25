@@ -7,7 +7,7 @@ namespace bitbots_ros_control {
  * It is similar to a CombinedRobotHw class as specified in ros_control, but it is changed a bit to make sharing of
  * a common bus driver over multiple hardware interfaces possible.
  */
-WolfgangHardwareInterface::WolfgangHardwareInterface(rclcpp::Node::SharedPtr nh) : servo_interface_(nh) {
+WolfgangHardwareInterface::WolfgangHardwareInterface(rclcpp::Node::SharedPtr nh) : servo_interface_(nh), sea_correction_helper_(nh) {
   nh_ = nh;
   first_ping_error_ = true;
   core_present_ = false;
@@ -47,6 +47,7 @@ WolfgangHardwareInterface::WolfgangHardwareInterface(rclcpp::Node::SharedPtr nh)
 
   // create overall servo interface since we need a single interface for the controllers
   servo_interface_ = DynamixelServoHardwareInterface(nh);
+  sea_correction_helper_ = SeaCorrectionHelper(nh);
 
   // try to ping all devices on the list, add them to the driver and create corresponding hardware interfaces
   // try until interruption to enable the user to turn on the power

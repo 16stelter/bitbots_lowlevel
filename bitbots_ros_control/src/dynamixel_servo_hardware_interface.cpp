@@ -8,28 +8,6 @@ using std::placeholders::_1;
 
 DynamixelServoHardwareInterface::DynamixelServoHardwareInterface(rclcpp::Node::SharedPtr nh) {
   nh_ = nh;
-
-  lknee_node_ = rclcpp::Node::make_shared("lknee_pid");
-  rknee_node_ = rclcpp::Node::make_shared("rknee_pid");
-
-  lknee_node_->declare_parameter<double>("p", 0.0);
-  lknee_node_->declare_parameter<double>("i", 0.0);
-  lknee_node_->declare_parameter<double>("d", 0.0);
-  lknee_node_->declare_parameter<double>("i_clamp_max", 0.0);
-  lknee_node_->declare_parameter<double>("i_clamp_min", 0.0);
-  lknee_node_->declare_parameter<bool>("antiwindup", false);
-  rknee_node_->declare_parameter<double>("p", 0.0);
-  rknee_node_->declare_parameter<double>("i", 0.0);
-  rknee_node_->declare_parameter<double>("d", 0.0);
-  rknee_node_->declare_parameter<double>("i_clamp_max", 0.0);
-  rknee_node_->declare_parameter<double>("i_clamp_min", 0.0);
-  rknee_node_->declare_parameter<bool>("antiwindup", false);
-  
-  lknee_pid_ = std::make_shared<control_toolbox::PidROS>(lknee_node_, "");
-  rknee_pid_ = std::make_shared<control_toolbox::PidROS>(rknee_node_, "");
-  lknee_pid_->initPid();
-  rknee_pid_->initPid();
-
 }
 
 void DynamixelServoHardwareInterface::addBusInterface(ServoBusInterface *bus) {
@@ -56,14 +34,8 @@ bool DynamixelServoHardwareInterface::init() {
           &DynamixelServoHardwareInterface::individualTorqueCb, this, _1));
   // todo we could change the command topic to something better
   sub_command_ = nh_->create_subscription<bitbots_msgs::msg::JointCommand>(
-      "/DynamixelController/command", 1, std::bind(&DynamixelServoHardwareInterface::commandCb,
+      "/DynamixelController/corrected", 1, std::bind(&DynamixelServoHardwareInterface::commandCb,
                                                    this, std::placeholders::_1));
-  sub_hall_l_ = nh_->create_subscription<bitbots_msgs::msg::FloatStamped>(
-      "/hall/left/filtered", 1, std::bind(&DynamixelServoHardwareInterface::hallLCb,
-                                                this, std::placeholders::_1));
-  sub_hall_r_ = nh_->create_subscription<bitbots_msgs::msg::FloatStamped>(
-      "/hall/right/filtered", 1, std::bind(&DynamixelServoHardwareInterface::hallRCb,
-                                                this, std::placeholders::_1));
   pwm_pub_ = nh_->create_publisher<sensor_msgs::msg::JointState>("/servo_PWM", 10);
   joint_pub_ = nh_->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
 
@@ -127,23 +99,7 @@ void DynamixelServoHardwareInterface::commandCb(const bitbots_msgs::msg::JointCo
     goal_velocity_[joint_id] = command_msg.velocities[i];
     goal_acceleration_[joint_id] = command_msg.accelerations[i];
     goal_effort_[joint_id] = command_msg.max_currents[i];
-    if (command_msg.joint_names[i] == "LKnee") {
-      goal_position_[joint_id] -= lknee_pid_->computeCommand(hall_l_ - goal_position_[joint_id], rclcpp::Duration::from_nanoseconds(1e9 * 0.001));
-    }
-    else if (command_msg.joint_names[i] == "RKnee") {
-      goal_position_[joint_id] -= rknee_pid_->computeCommand(hall_r_ - goal_position_[joint_id], rclcpp::Duration::from_nanoseconds(1e9 * 0.001));
-    }
   }
-}
-
-
-
-void DynamixelServoHardwareInterface::hallLCb(const bitbots_msgs::msg::FloatStamped &msg) {
-  hall_l_ = msg.value;
-}
-
-void DynamixelServoHardwareInterface::hallRCb(const bitbots_msgs::msg::FloatStamped &msg) {
-  hall_r_ = msg.value;
 }
 
 void DynamixelServoHardwareInterface::individualTorqueCb(bitbots_msgs::msg::JointTorque msg) {

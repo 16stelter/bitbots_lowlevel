@@ -1,6 +1,7 @@
 wolfgang_hardware_interface:
   ros__parameters:
     control_loop_hz: 500.0
+    correction_method: "pid"
 
     port_info:
       port0:
