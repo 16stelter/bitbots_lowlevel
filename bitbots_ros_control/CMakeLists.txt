@@ -27,6 +27,8 @@ find_package(tf2_ros REQUIRED)
 find_package(transmission_interface REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(backward_ros REQUIRED)
+find_package(control_msgs REQUIRED)
+find_package(control_toolbox REQUIRED)
 
 set(INCLUDE_DIRS include)
 include_directories(${INCLUDE_DIRS})
@@ -72,7 +74,9 @@ ament_target_dependencies(node
         tf2_ros
         transmission_interface
         yaml-cpp
-        backward_ros)
+        backward_ros
+        control_msgs
+        control_toolbox)
 
 add_executable(pressure_converter src/pressure_converter.cpp)
 ament_target_dependencies(pressure_converter

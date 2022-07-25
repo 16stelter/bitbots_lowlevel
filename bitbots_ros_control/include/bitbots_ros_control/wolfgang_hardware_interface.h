@@ -27,14 +27,14 @@ class WolfgangHardwareInterface {
   void read(const rclcpp::Time &t, const rclcpp::Duration &dt);
 
   void write(const rclcpp::Time &t, const rclcpp::Duration &dt);
+  DynamixelServoHardwareInterface servo_interface_;
 
- private:
+private:
   bool create_interfaces(std::vector<std::pair<std::string, int>> dxl_devices);
   rclcpp::Node::SharedPtr nh_;
 
   // two dimensional list of all hardware interfaces, sorted by port
   std::vector<std::vector<bitbots_ros_control::HardwareInterface *>> interfaces_;
-  DynamixelServoHardwareInterface servo_interface_;
   rclcpp::Publisher<humanoid_league_msgs::msg::Audio>::SharedPtr speak_pub_;
 
   // prevent unnecessary error when power is turned on
