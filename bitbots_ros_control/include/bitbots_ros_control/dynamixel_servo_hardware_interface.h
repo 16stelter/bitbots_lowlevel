@@ -13,6 +13,8 @@
 #include <std_msgs/msg/int32_multi_array.hpp>
 #include <bitbots_msgs/msg/joint_torque.hpp>
 #include <bitbots_msgs/msg/joint_command.hpp>
+#include <bitbots_ros_control/sea_correction_helper.h>
+
 
 #include <bitbots_ros_control/utils.h>
 #include <bitbots_ros_control/hardware_interface.h>
@@ -58,6 +60,8 @@ class DynamixelServoHardwareInterface : public bitbots_ros_control::HardwareInte
   void write(const rclcpp::Time &t, const rclcpp::Duration &dt);
   void addBusInterface(ServoBusInterface *bus);
   void writeROMRAM(bool first_time);
+
+  SeaCorrectionHelper sea_correction_helper_;
 
 private:
   rclcpp::Node::SharedPtr nh_;

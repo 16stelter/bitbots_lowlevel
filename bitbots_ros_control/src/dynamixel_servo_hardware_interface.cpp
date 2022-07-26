@@ -6,8 +6,9 @@
 namespace bitbots_ros_control {
 using std::placeholders::_1;
 
-DynamixelServoHardwareInterface::DynamixelServoHardwareInterface(rclcpp::Node::SharedPtr nh) {
+DynamixelServoHardwareInterface::DynamixelServoHardwareInterface(rclcpp::Node::SharedPtr nh) : sea_correction_helper_(nh) {
   nh_ = nh;
+  sea_correction_helper_ = SeaCorrectionHelper(nh_);
 }
 
 void DynamixelServoHardwareInterface::addBusInterface(ServoBusInterface *bus) {
@@ -165,6 +166,8 @@ void DynamixelServoHardwareInterface::read(const rclcpp::Time &t, const rclcpp::
   joint_state_msg_.velocity = current_velocity_;
   joint_state_msg_.effort = current_effort_;
   joint_pub_->publish(joint_state_msg_);
+  sea_correction_helper_.stateCb(joint_state_msg_);
+
 
   // PWM values are not part of joint state controller and have to be published independently
   pwm_msg_.header.stamp = nh_->get_clock()->now();

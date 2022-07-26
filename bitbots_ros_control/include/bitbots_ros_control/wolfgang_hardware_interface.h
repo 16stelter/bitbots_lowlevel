@@ -14,7 +14,6 @@
 #include <bitbots_ros_control/leds_hardware_interface.h>
 #include <bitbots_ros_control/hardware_interface.h>
 #include <bitbots_ros_control/hall_hardware_interface.h>
-#include <bitbots_ros_control/sea_correction_helper.h>
 #include <rcl_interfaces/msg/list_parameters_result.hpp>
 
 namespace bitbots_ros_control {
@@ -29,7 +28,6 @@ class WolfgangHardwareInterface {
 
   void write(const rclcpp::Time &t, const rclcpp::Duration &dt);
   DynamixelServoHardwareInterface servo_interface_;
-  SeaCorrectionHelper sea_correction_helper_;
 
 private:
   bool create_interfaces(std::vector<std::pair<std::string, int>> dxl_devices);
