@@ -41,6 +41,7 @@ bool DynamixelServoHardwareInterface::init() {
   joint_pub_ = nh_->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
 
   torqueless_mode_ = nh_->get_parameter("torqueless_mode").as_bool();
+  sea_correction_helper_.init();
 
   // init merged vectors for controller
   joint_count_ = 0;

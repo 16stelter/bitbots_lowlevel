@@ -3,6 +3,9 @@
 namespace bitbots_ros_control {
   SeaCorrectionHelper::SeaCorrectionHelper(rclcpp::Node::SharedPtr nh) {
     nh_ = nh;
+  }
+
+  bool SeaCorrectionHelper::init() {
     if (nh_->get_parameter("correction_method").as_string() == "pid") {
       lknee_node_ = rclcpp::Node::make_shared("lknee_pid");
       rknee_node_ = rclcpp::Node::make_shared("rknee_pid");
@@ -38,6 +41,7 @@ namespace bitbots_ros_control {
       "/hall/right/filtered", 1, std::bind(&SeaCorrectionHelper::hallRCb,
                                            this, std::placeholders::_1));
     pub_ = nh_->create_publisher<bitbots_msgs::msg::JointCommand>("/DynamixelController/corrected", 1);
+    return true;
   }
 
   void SeaCorrectionHelper::hallLCb(const bitbots_msgs::msg::FloatStamped &msg) {
@@ -49,7 +53,7 @@ namespace bitbots_ros_control {
   }
 
   void SeaCorrectionHelper::commandCb(bitbots_msgs::msg::JointCommand msg) {
-    latched_command_ = msg
+    latched_command_ = msg;
   }
 
   void SeaCorrectionHelper::stateCb(const sensor_msgs::msg::JointState &msg) {

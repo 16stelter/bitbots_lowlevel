@@ -15,6 +15,7 @@ namespace bitbots_ros_control {
     std::shared_ptr <rclcpp::Node> lknee_node_;
     std::shared_ptr <rclcpp::Node> rknee_node_;
 
+    bool init();
     void stateCb(const sensor_msgs::msg::JointState &msg);
 
   private:
