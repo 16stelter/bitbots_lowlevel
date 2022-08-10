@@ -26,7 +26,6 @@ find_package(std_srvs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(transmission_interface REQUIRED)
 find_package(yaml-cpp REQUIRED)
-find_package(backward_ros REQUIRED)
 find_package(control_msgs REQUIRED)
 find_package(control_toolbox REQUIRED)
 
@@ -48,7 +47,6 @@ set(SOURCES
         src/node.cpp
         src/servo_bus_interface.cpp
         src/utils.cpp
-        src/sea_correction_helper.cpp
         src/wolfgang_hardware_interface.cpp include/bitbots_ros_control/hardware_interface.h)
 
 #enable_bitbots_docs()

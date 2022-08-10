@@ -6,9 +6,8 @@
 namespace bitbots_ros_control {
 using std::placeholders::_1;
 
-DynamixelServoHardwareInterface::DynamixelServoHardwareInterface(rclcpp::Node::SharedPtr nh) : sea_correction_helper_(nh) {
+DynamixelServoHardwareInterface::DynamixelServoHardwareInterface(rclcpp::Node::SharedPtr nh) {
   nh_ = nh;
-  sea_correction_helper_ = SeaCorrectionHelper(nh_);
 }
 
 void DynamixelServoHardwareInterface::addBusInterface(ServoBusInterface *bus) {
@@ -41,7 +40,6 @@ bool DynamixelServoHardwareInterface::init() {
   joint_pub_ = nh_->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
 
   torqueless_mode_ = nh_->get_parameter("torqueless_mode").as_bool();
-  sea_correction_helper_.init();
 
   // init merged vectors for controller
   joint_count_ = 0;
@@ -167,7 +165,6 @@ void DynamixelServoHardwareInterface::read(const rclcpp::Time &t, const rclcpp::
   joint_state_msg_.velocity = current_velocity_;
   joint_state_msg_.effort = current_effort_;
   joint_pub_->publish(joint_state_msg_);
-  sea_correction_helper_.stateCb(joint_state_msg_);
 
 
   // PWM values are not part of joint state controller and have to be published independently

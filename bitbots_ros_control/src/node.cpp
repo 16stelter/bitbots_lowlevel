@@ -70,8 +70,6 @@ int main(int argc, char *argv[]) {
     //
     hw.write(current_time, period);
     exec.spin_some();
-    rclcpp::spin_some(hw.servo_interface_.sea_correction_helper_.lknee_node_);
-    rclcpp::spin_some(hw.servo_interface_.sea_correction_helper_.rknee_node_);
     rate.sleep();
 
     //
