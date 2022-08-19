@@ -4,3 +4,5 @@ hall_converter:
     right_topic: "/hall/right"
     l_offset: 0.0
     r_offset: 0.0
+    l_gradient: 0.0
+    r_gradient: 0.0

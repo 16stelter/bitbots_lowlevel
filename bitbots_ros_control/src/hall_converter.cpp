@@ -15,12 +15,14 @@ HallConverter::HallConverter(rclcpp::Node::SharedPtr nh, char side) {
             RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": left_topic not specified");
         topic = nh_->get_parameter("left_topic").as_string();
         offset_ = nh_->get_parameter("l_offset").get_value<float>();
+        gradient_ = nh_->get_parameter("l_gradient").get_value<float>();
 
     } else if (side_ == 'r') {
         if (!nh_->has_parameter("right_topic"))
             RCLCPP_ERROR_STREAM(nh_->get_logger(), nh_->get_name() << ": right_topic not specified");
         topic = nh_->get_parameter("right_topic").as_string();
         offset_ = nh_->get_parameter("r_offset").get_value<float>();
+        gradient_ = nh_->get_parameter("r_gradient").get_value<float>();
     }
 
     rclcpp::SubscriptionOptions options;
@@ -38,16 +40,12 @@ HallConverter::HallConverter(rclcpp::Node::SharedPtr nh, char side) {
 
 void HallConverter::hallCb(bitbots_msgs::msg::FloatStamped raw) {
   double value = raw.value + offset_; // add offset
-  value = (value - 64.0) * 2.0; // to dynamixel
-  if(value < 0) { // wrap around
-    value = 4096.0 - value;
+  value = (1088 -  value) * gradient_;
+  if(value < -M_PI) { // wrap around
+    value = value + 2 * M_PI;
   }
-  value = std::fmod(value,  4096.0);
-  if(value < 2048.0) { // to angle
-    value = -M_PI + (value / 2048.0) * M_PI;
-  }
-  else {
-    value = ((value - 2048.0) / 2048.0) * M_PI;
+  else if(value > M_PI) {
+    value = value - 2 * M_PI;
   }
   bitbots_msgs::msg::FloatStamped msg;
   msg.value = value;

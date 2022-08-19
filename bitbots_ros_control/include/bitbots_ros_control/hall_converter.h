@@ -20,4 +20,5 @@ class HallConverter {
 
     char side_;
     float offset_;
+    float gradient_;
 };
