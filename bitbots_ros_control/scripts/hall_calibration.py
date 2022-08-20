@@ -54,8 +54,8 @@ class Calibration(Node):
         msg.max_currents = [-1.0] * 20
         self.mgpub.publish(msg)
         self.get_logger().info("Waiting 3 seconds...")
-        time.sleep(3)
-        for i in range (100):
+        start_time = time.time()
+        while time.time() - start_time < 3:
             rclpy.spin_once(self)
         loffset = self.lhall
         roffset = self.rhall
@@ -72,8 +72,8 @@ class Calibration(Node):
         msg2.max_currents = [-1.0, -1.0]
         self.mgpub.publish(msg2)
         self.get_logger().info("Waiting 3 seconds...")
-        time.sleep(3)
-        for i in range (100):
+        start_time = time.time()
+        while time.time() - start_time < 3:
             rclpy.spin_once(self)
         lgrad = 1.0 / (self.lhall - loffset)
         rgrad = -1.0 / (self.rhall - roffset)  # Im not sure why, but this is flipped...
@@ -104,11 +104,6 @@ class Calibration(Node):
 
 if __name__ == "__main__":
     node = Calibration()
-    exec = rclpy.executors.MultiThreadedExecutor()
-    exec.add_node(node)
-    exec.spin()
-
-
 
 
 
