@@ -66,7 +66,7 @@ class Calibration(Node):
         msg2 = JointCommand()
         msg2.header.stamp = self.get_clock().now().to_msg()
         msg2.joint_names = ["LKnee", "RKnee"]
-        msg2.positions = [1.0, -1.0]
+        msg2.positions = [2.0, -2.0]
         msg2.velocities = [-1.0, -1.0]
         msg2.accelerations = [-1.0, -1.0]
         msg2.max_currents = [-1.0, -1.0]
@@ -75,8 +75,8 @@ class Calibration(Node):
         start_time = time.time()
         while time.time() - start_time < 3:
             rclpy.spin_once(self)
-        lgrad = 1.0 / (self.lhall - loffset)
-        rgrad = -1.0 / (self.rhall - roffset)  # Im not sure why, but this is flipped...
+        lgrad = 2.0 / (self.lhall - loffset)
+        rgrad = -2.0 / (self.rhall - roffset)  # Im not sure why, but this is flipped...
         self.get_logger().info("Left gradient is " + str(lgrad))
         self.get_logger().info("Right gradient is " + str(rgrad))
         self.get_logger().info("Going back to init position...")

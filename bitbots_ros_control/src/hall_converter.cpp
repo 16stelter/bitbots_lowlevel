@@ -41,12 +41,6 @@ HallConverter::HallConverter(rclcpp::Node::SharedPtr nh, char side) {
 void HallConverter::hallCb(bitbots_msgs::msg::FloatStamped raw) {
   double value = raw.value + offset_; // add offset
   value = (1088 -  value) * gradient_;
-  if(value < -M_PI) { // wrap around
-    value = value + 2 * M_PI;
-  }
-  else if(value > M_PI) {
-    value = value - 2 * M_PI;
-  }
   bitbots_msgs::msg::FloatStamped msg;
   msg.value = value;
   msg.header.stamp = nh_->get_clock()->now();
