@@ -1,8 +1,8 @@
 hall_converter:
   ros__parameters:
-    left_topic: "/hall/left"
-    right_topic: "/hall/right"
-    l_offset: 0.0
-    r_offset: 0.0
     l_gradient: 0.0
+    l_offset: 0.0
+    left_topic: /hall/left
     r_gradient: 0.0
+    r_offset: 0.0
+    right_topic: /hall/right

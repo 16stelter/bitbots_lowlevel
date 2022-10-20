@@ -4,6 +4,11 @@
 #include <bitbots_msgs/msg/float_stamped.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
+
+/**
+ * This class converts the raw readings of the Hall sensor into an rotational angle. 
+ * An offset and a gradient are used to match the sensor readings to the readings of the actuator. 
+ **/
 class HallConverter {
   public:
     HallConverter(rclcpp::Node::SharedPtr nh, char side);

@@ -42,7 +42,7 @@ void HallConverter::hallCb(bitbots_msgs::msg::FloatStamped raw) {
   double value = raw.value + offset_; // add offset
   value = (1088 -  value) * gradient_;
   bitbots_msgs::msg::FloatStamped msg;
-  msg.value = value;
+  msg.value = 0.091;
   msg.header.stamp = nh_->get_clock()->now();
   pub_->publish(msg);
 }

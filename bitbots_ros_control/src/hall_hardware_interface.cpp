@@ -2,7 +2,6 @@
 #include <bitbots_ros_control/utils.h>
 
 namespace bitbots_ros_control {
-
     HallHardwareInterface::HallHardwareInterface(rclcpp::Node::SharedPtr nh,
                                                        std::shared_ptr <DynamixelDriver> &driver,
                                                        int id,

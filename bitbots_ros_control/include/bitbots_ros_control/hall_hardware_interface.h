@@ -12,6 +12,9 @@
 
 namespace bitbots_ros_control {
 
+    /**
+     * This class provides a hardware interface to communicate with a Hall sensor.
+     **/
     class HallHardwareInterface : public bitbots_ros_control::HardwareInterface {
         public:
             explicit HallHardwareInterface(rclcpp::Node::SharedPtr nh,
@@ -22,8 +25,10 @@ namespace bitbots_ros_control {
 
             bool init();
 
+            /* Read sensor data from bus*/
             void read(const rclcpp::Time &t, const rclcpp::Duration &dt);
 
+            /* As the sensor cannot be written to, this does nothing, but is expected by ros_control.*/
             void write(const rclcpp::Time &t, const rclcpp::Duration &dt);
         private:
             rclcpp::Node::SharedPtr nh_;

@@ -5,7 +5,7 @@ wolfgang_hardware_interface:
 
     port_info:
       port0:
-        device_file: /dev/ttyUSB0
+        device_file: /dev/ttyUSB1
         baudrate: 4000000
         protocol_version: 2
       port1:
@@ -102,12 +102,12 @@ wolfgang_hardware_interface:
         interface_type: LED
         number_of_LEDs: 3
         start_number: 3
-#      IMU_head:
-#        id: 242
-#        topic: imu_head/data
-#        frame: imu_head_frame
-#        model_number: 0xBAFF
-#        interface_type: IMU
+      IMU_head:
+        id: 242
+        topic: imu_head/data
+        frame: imu_head_frame
+        model_number: 0xBAFF
+        interface_type: IMU
       RShoulderPitch:
         id: 1
         model_number: 311
@@ -173,11 +173,11 @@ wolfgang_hardware_interface:
         model_number: 1100
         mounting_offset: 0.0
         joint_offset: 0.0
-      LKnee:
-        id: 14
-        model_number: 1100
-        mounting_offset: 0.0
-        joint_offset: 0.0
+     LKnee:
+       id: 14
+       model_number: 1100
+       mounting_offset: 0.0
+       joint_offset: 0.0
       RAnklePitch:
         id: 15
         model_number: 321
